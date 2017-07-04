@@ -1,0 +1,18 @@
+{
+  "autoPin": true,
+  "pins": [
+    {
+      "package": "OrbitCompilerUtils",
+      "reason": null,
+      "repositoryURL": "https://github.com/daviejaneway/OrbitCompilerUtils.git",
+      "version": "0.0.1"
+    },
+    {
+      "package": "OrbitFrontend",
+      "reason": null,
+      "repositoryURL": "https://github.com/daviejaneway/OrbitFrontend.git",
+      "version": "0.0.2"
+    }
+  ],
+  "version": 1
+}
