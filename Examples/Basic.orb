@@ -1,0 +1,9 @@
+api Basic
+	with Orb::Core::Main
+
+	type Basic() : Main
+
+	(Basic) main (argc Int, argv [String]) (Int)
+		return 2 + 2
+	...
+...

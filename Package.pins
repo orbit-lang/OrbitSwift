@@ -2,6 +2,18 @@
   "autoPin": true,
   "pins": [
     {
+      "package": "LLVM",
+      "reason": null,
+      "repositoryURL": "https://github.com/trill-lang/LLVMSwift",
+      "version": "0.1.11"
+    },
+    {
+      "package": "OrbitBackend",
+      "reason": null,
+      "repositoryURL": "https://github.com/daviejaneway/OrbitBackend.git",
+      "version": "0.0.8"
+    },
+    {
       "package": "OrbitCompilerUtils",
       "reason": null,
       "repositoryURL": "https://github.com/daviejaneway/OrbitCompilerUtils.git",
@@ -11,7 +23,25 @@
       "package": "OrbitFrontend",
       "reason": null,
       "repositoryURL": "https://github.com/daviejaneway/OrbitFrontend.git",
-      "version": "0.0.2"
+      "version": "0.0.22"
+    },
+    {
+      "package": "SwiftCLI",
+      "reason": null,
+      "repositoryURL": "https://github.com/jakeheis/SwiftCLI.git",
+      "version": "3.0.1"
+    },
+    {
+      "package": "SwiftyJSON",
+      "reason": null,
+      "repositoryURL": "https://github.com/SwiftyJSON/SwiftyJSON.git",
+      "version": "3.1.4"
+    },
+    {
+      "package": "cllvm",
+      "reason": null,
+      "repositoryURL": "https://github.com/trill-lang/cllvm.git",
+      "version": "0.0.3"
     }
   ],
   "version": 1

@@ -1,0 +1,12 @@
+api HelloWorld
+	with Orb::Core::Main
+	with Orb::Core::IO
+
+	(Main) main (argc Int, argv [String]) (Int)
+		IO.print("Hello, World!")
+	...
+...
+
+# OR
+
+@Script(IO.print("Hello, World!"))

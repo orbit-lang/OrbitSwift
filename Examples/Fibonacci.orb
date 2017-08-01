@@ -1,0 +1,13 @@
+api Fibonacci
+	# Recursive
+	(Int) fib (n Int) (Int)
+		return (n < 2) ? (n, Int.fib(n - 1) + Int.fib(n - 2))
+	...
+
+	#Iterative, memoized
+	(Int) fib (n? Int) (n Int)
+		case 0 = return 0
+		
+		return fib[n] ? (n, Int.fib(n - 1) + Int.fib(n - 2))
+	...
+...
