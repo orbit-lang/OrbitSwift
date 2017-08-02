@@ -11,7 +11,7 @@
       "package": "OrbitBackend",
       "reason": null,
       "repositoryURL": "https://github.com/daviejaneway/OrbitBackend.git",
-      "version": "0.0.8"
+      "version": "0.0.10"
     },
     {
       "package": "OrbitCompilerUtils",
@@ -23,7 +23,7 @@
       "package": "OrbitFrontend",
       "reason": null,
       "repositoryURL": "https://github.com/daviejaneway/OrbitFrontend.git",
-      "version": "0.0.22"
+      "version": "0.0.25"
     },
     {
       "package": "SwiftCLI",

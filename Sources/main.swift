@@ -222,11 +222,11 @@ class Build : Command {
         let lexParseChain = CompilationChain(inputPhase: lexer, outputPhase: parser)
         let chain = CompilationChain(inputPhase: source, outputPhase: lexParseChain)
         
-        let result = try chain.execute(input: inputFile.value)
-        
-        let typeChecker = TypeResolver()
-        
         do {
+            let result = try chain.execute(input: inputFile.value)
+            
+            let typeChecker = TypeResolver()
+            
             let typeMap = try typeChecker.execute(input: result)
             let api = result.body[0] as! APIExpression
             let codegen = LLVMGenerator(apiName: api.name.value)
@@ -306,6 +306,6 @@ class Build : Command {
 CLI.setup(name: "orbit")
 CLI.register(commands: [Lex(), Parse(), TypeCheck(), LLVM(), Build()])
 
-//_ = CLI.debugGo(with: "orbit run /Users/davie/dev/other/test.orb")
+//_ = CLI.debugGo(with: "orbit build /Users/davie/dev/other/test.orb")
 _ = CLI.go()
 
