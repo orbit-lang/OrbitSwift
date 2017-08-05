@@ -108,16 +108,20 @@ class TypeCheck : Command {
         let source = SourceResolver()
         let lexer = Lexer()
         let parser = Parser()
+        let nameResolver = NameResolver()
         
         let lexParseChain = CompilationChain(inputPhase: lexer, outputPhase: parser)
         let chain = CompilationChain(inputPhase: source, outputPhase: lexParseChain)
         
         let result = try chain.execute(input: inputFile.value)
+        let context = try nameResolver.execute(input: result.body as! [APIExpression])
+        
+        let api = try context.mergeAPIs()
         
         let typeChecker = TypeResolver()
         
         do {
-            _ = try typeChecker.execute(input: result)
+            _ = try typeChecker.execute(input: api)
             
             print("Type verification succeeded")
         } catch let ex as OrbitError {
@@ -146,19 +150,23 @@ class LLVM : Command {
         let source = SourceResolver()
         let lexer = Lexer()
         let parser = Parser()
+        let nameResolver = NameResolver()
         
         let lexParseChain = CompilationChain(inputPhase: lexer, outputPhase: parser)
         let chain = CompilationChain(inputPhase: source, outputPhase: lexParseChain)
         
         let result = try chain.execute(input: inputFile.value)
+        let context = try nameResolver.execute(input: result.body as! [APIExpression])
+        
+        let api = try context.mergeAPIs()
         
         let typeChecker = TypeResolver()
         
         do {
-            let typeMap = try typeChecker.execute(input: result)
+            let typeMap = try typeChecker.execute(input: api)
             let api = result.body[0] as! APIExpression
             let codegen = LLVMGenerator(apiName: api.name.value)
-            let module = try codegen.execute(input: (typeMap: typeMap, ast: api))
+            let module = try codegen.execute(input: (context: context, typeMap: typeMap, ast: api))
             
             if textualOutput.value && bitcodeOutput.value {
                 throw OrbitError(message: "Cannot output textual & bitcode formats at the same time, please choose one or the other")
@@ -218,6 +226,7 @@ class Build : Command {
         let source = SourceResolver()
         let lexer = Lexer()
         let parser = Parser()
+        let nameResolver = NameResolver()
         
         let lexParseChain = CompilationChain(inputPhase: lexer, outputPhase: parser)
         let chain = CompilationChain(inputPhase: source, outputPhase: lexParseChain)
@@ -227,10 +236,14 @@ class Build : Command {
             
             let typeChecker = TypeResolver()
             
-            let typeMap = try typeChecker.execute(input: result)
-            let api = result.body[0] as! APIExpression
+            let context = try nameResolver.execute(input: result.body as! [APIExpression])
+            
+            let api = try context.mergeAPIs()
+            
+            let typeMap = try typeChecker.execute(input: api)
+            
             let codegen = LLVMGenerator(apiName: api.name.value)
-            let module = try codegen.execute(input: (typeMap: typeMap, ast: api))
+            let module = try codegen.execute(input: (context: context, typeMap: typeMap, ast: api))
             
             let objPath = outputFile.value ?? inputFile.value.replacingOccurrences(of: ".orb", with: ".o")
             let exePath = inputFile.value.replacingOccurrences(of: ".orb", with: "")
