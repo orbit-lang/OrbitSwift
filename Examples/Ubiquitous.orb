@@ -1,9 +1,7 @@
-api Ubiquitous within Main
+api Ubiquitous {
 	type Main(argc Int, argv [[Int8]])
 
-	(self Main) main () (Int)
+	(self Main) main () () {
 		debug "Hello, World!"
-		
-		return 0
-	...
-...
+	}
+}

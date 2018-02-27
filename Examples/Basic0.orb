@@ -1,7 +1,7 @@
-api Basic0
+api Basic0 {
 	type Main(argc Int32, argv [[Int8]])
 
-	(self Main) main () (Int)
+	(self Main) main () (Int) {
 		return 0
-	...
-...
+	}
+}

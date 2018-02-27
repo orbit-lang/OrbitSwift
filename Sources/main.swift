@@ -24,7 +24,7 @@ class SourceResolver : CompilationPhase {
 
 func validateFileExists(path value: String) throws {
     guard FileManager.default.fileExists(atPath: value) else {
-        throw CLIError.error("\(value) does not exist")
+        throw CLI.Error(message: "\(value) does not exist")
     }
 }
 
@@ -32,11 +32,11 @@ func validateIsOrbitSourceFile(path value: String) throws {
     let path = URL(fileURLWithPath: value)
     
     guard path.pathExtension == "orb" else {
-        throw CLIError.error("Expected file with .orb extension, found: \(value)")
+        throw CLI.Error(message: "Expected file with .orb extension, found: \(value)")
     }
 }
 
-let GlobalOutputFile = Key<String>("-o", "--output", usage: "Output will be written to this path")
+let GlobalOutputFile = Key<String>("-o", "--output", description: "Output will be written to this path")
 
 class Lex : Command {
     let name = "lex"
@@ -81,193 +81,94 @@ class Parse : Command {
         
         let source = SourceResolver()
         let lexer = Lexer()
-        let parser = Parser()
+        let parser = ParseContext.bootstrapParser()
         
         let lexParseChain = CompilationChain(inputPhase: lexer, outputPhase: parser)
         let chain = CompilationChain(inputPhase: source, outputPhase: lexParseChain)
         
-        let result = try chain.execute(input: inputFile.value)
+        let root = try chain.execute(input: inputFile.value) as! RootExpression
+        let result = root.body[0] as! ProgramExpression
         
         if let out = outputFile.value {
-            try "\(result)".write(toFile: out, atomically: true, encoding: .utf8)
+            try result.toJson().rawString()!.write(toFile: out, atomically: true, encoding: .utf8)
         } else {
-            print(result)
+            print(result.toJson().rawString()!)
         }
     }
 }
 
-class TypeCheck : Command {
-    let name = "verify"
-    let inputFile = Parameter()
-    let shortDescription: String = "Parses the given file and performs type analysis on the resultant AST."
-    
-    func execute() throws {
-        try validateFileExists(path: inputFile.value)
-        try validateIsOrbitSourceFile(path: inputFile.value)
-        
-        let source = SourceResolver()
-        let lexer = Lexer()
-        let parser = Parser()
-        let nameResolver = NameResolver()
-        
-        let lexParseChain = CompilationChain(inputPhase: lexer, outputPhase: parser)
-        let chain = CompilationChain(inputPhase: source, outputPhase: lexParseChain)
-        
-        let result = try chain.execute(input: inputFile.value)
-        let context = try nameResolver.execute(input: result.body as! [APIExpression])
-        
-        let api = try context.mergeAPIs()
-        
-        let typeChecker = TypeResolver()
-        
-        do {
-            _ = try typeChecker.execute(input: api)
-            
-            print("Type verification succeeded")
-        } catch let ex as OrbitError {
-            print(ex.message)
-        } catch let ex {
-            throw ex
-        }
-    }
-}
-
-class LLVM : Command {
-    let name = "llvm"
-    let inputFile = Parameter()
-    let outputFile = GlobalOutputFile
-    let textualOutput = Flag("-t", "--textual", usage: "Outputs textual LLVM IR", defaultValue: true)
-    let bitcodeOutput = Flag("-b", "--bitcode", usage: "Outputs LLVM bitcode (--output must also be supplied)", defaultValue: false)
-    
-    let shortDescription: String = "Compiles the given source file to LLVM IR"
-    
-    func execute() throws {
-        // TODO - Multiple input files, linking
-        
-        try validateFileExists(path: inputFile.value)
-        try validateIsOrbitSourceFile(path: inputFile.value)
-        
-        let source = SourceResolver()
-        let lexer = Lexer()
-        let parser = Parser()
-        let nameResolver = NameResolver()
-        
-        let lexParseChain = CompilationChain(inputPhase: lexer, outputPhase: parser)
-        let chain = CompilationChain(inputPhase: source, outputPhase: lexParseChain)
-        
-        let result = try chain.execute(input: inputFile.value)
-        let context = try nameResolver.execute(input: result.body as! [APIExpression])
-        
-        let api = try context.mergeAPIs()
-        
-        let typeChecker = TypeResolver()
-        
-        do {
-            let typeMap = try typeChecker.execute(input: api)
-            let api = result.body[0] as! APIExpression
-            let codegen = LLVMGenerator(apiName: api.name.value)
-            let module = try codegen.execute(input: (context: context, typeMap: typeMap, ast: api))
-            
-            if textualOutput.value && bitcodeOutput.value {
-                throw OrbitError(message: "Cannot output textual & bitcode formats at the same time, please choose one or the other")
-            }
-            
-            if textualOutput.value {
-                if let o = outputFile.value {
-                    try module.print(to: o)
-                } else {
-                    module.dump()
-                }
-            } else if bitcodeOutput.value {
-                if let o = outputFile.value {
-                    try module.emitBitCode(to: o)
-                } else {
-                    throw OrbitError(message: "Cannot print LLVM bitcode to stdout, please provide an output path using the --output option")
-                }
-            }
-            
-            
-        } catch let ex as OrbitError {
-            print(ex.message)
-        } catch let ex {
-            throw ex
-        }
-    }
-}
-
-class Build : Command {
-    let name = "build"
-    let inputFile = Parameter()
-    let outputFile = GlobalOutputFile
-    let shortDescription: String = "Compiles the given source file to an executable binary"
-    
-    func run(cmd: String, args: [String]) -> String? {
-        let pipe = Pipe()
-        let process = Process()
-        
-        process.launchPath = cmd
-        process.arguments = args
-        
-        process.standardOutput = pipe
-        
-        let fileHandle = pipe.fileHandleForReading
-        
-        process.launch()
-        
-        return String(data: fileHandle.readDataToEndOfFile(), encoding: .utf8)
-    }
-    
-    func execute() throws {
-        // TODO - Multiple input files, linking
-        
-        try validateFileExists(path: inputFile.value)
-        try validateIsOrbitSourceFile(path: inputFile.value)
-        
-        let source = SourceResolver()
-        let lexer = Lexer()
-        let parser = Parser()
-        let nameResolver = NameResolver()
-        
-        let lexParseChain = CompilationChain(inputPhase: lexer, outputPhase: parser)
-        let chain = CompilationChain(inputPhase: source, outputPhase: lexParseChain)
-        
-        do {
-            let result = try chain.execute(input: inputFile.value)
-            
-            let typeChecker = TypeResolver()
-            
-            let context = try nameResolver.execute(input: result.body as! [APIExpression])
-            
-            let api = try context.mergeAPIs()
-            
-            let typeMap = try typeChecker.execute(input: api)
-            
-            let codegen = LLVMGenerator(apiName: api.name.value)
-            let module = try codegen.execute(input: (context: context, typeMap: typeMap, ast: api))
-            
-            let objPath = outputFile.value ?? inputFile.value.replacingOccurrences(of: ".orb", with: ".o")
-            let exePath = inputFile.value.replacingOccurrences(of: ".orb", with: "")
-            
-            try TargetMachine().emitToFile(module: module, type: .object, path: objPath)
-            
-            guard let clang = run(cmd: "/usr/bin/which", args: ["clang"])?.replacingOccurrences(of: "\n", with: "") else {
-                guard let gcc = run(cmd: "/usr/bin/which", args: ["gcc"])?.replacingOccurrences(of: "\n", with: "") else {
-                    throw OrbitError(message: "Could not find clang or gcc, please ensure")
-                }
-                
-                _ = run(cmd: gcc, args: [objPath, "-o \(exePath)"])
-                
-                return
-            }
-            
-            _ = run(cmd: clang, args: [objPath, "-o", "\(exePath)"])
-        } catch let ex as OrbitError {
-            print(ex.message)
-        } catch let ex {
-            throw ex
-        }
-    }
-}
+//class Build : Command {
+//    let name = "build"
+//    let inputFile = Parameter()
+//    let outputFile = GlobalOutputFile
+//    let shortDescription: String = "Compiles the given source file to an executable binary"
+//
+//    func run(cmd: String, args: [String]) -> String? {
+//        let pipe = Pipe()
+//        let process = Process()
+//
+//        process.launchPath = cmd
+//        process.arguments = args
+//
+//        process.standardOutput = pipe
+//
+//        let fileHandle = pipe.fileHandleForReading
+//
+//        process.launch()
+//
+//        return String(data: fileHandle.readDataToEndOfFile(), encoding: .utf8)
+//    }
+//
+//    func execute() throws {
+//        // TODO - Multiple input files, linking
+//
+//        try validateFileExists(path: inputFile.value)
+//        try validateIsOrbitSourceFile(path: inputFile.value)
+//
+//        let source = SourceResolver()
+//        let lexer = Lexer()
+//        let parser = Parser()
+//        let nameResolver = NameResolver()
+//        let methodResolver = MethodResolver()
+//        let traitResolver = TraitResolver()
+//        let lexParseChain = CompilationChain(inputPhase: lexer, outputPhase: parser)
+//        let chain = CompilationChain(inputPhase: source, outputPhase: lexParseChain)
+//
+//        do {
+//            let result = try chain.execute(input: inputFile.value)
+//            let typeChecker = TypeResolver()
+//            var context = try nameResolver.execute(input: result.body as! [APIExpression])
+//
+//            context = try methodResolver.execute(input: context)
+//            context = try traitResolver.execute(input: context)
+//            context = try typeChecker.execute(input: context)
+//
+//            let codegen = LLVMGenerator()
+//            let module = try codegen.execute(input: context)
+//
+//            let objPath = outputFile.value ?? inputFile.value.replacingOccurrences(of: ".orb", with: ".o")
+//            let exePath = inputFile.value.replacingOccurrences(of: ".orb", with: "")
+//
+//            try TargetMachine().emitToFile(module: module, type: .object, path: objPath)
+//
+//            guard let clang = run(cmd: "/usr/bin/which", args: ["clang"])?.replacingOccurrences(of: "\n", with: "") else {
+//                guard let gcc = run(cmd: "/usr/bin/which", args: ["gcc"])?.replacingOccurrences(of: "\n", with: "") else {
+//                    throw OrbitError(message: "Could not find clang or gcc, please ensure")
+//                }
+//
+//                _ = run(cmd: gcc, args: [objPath, "-o \(exePath)"])
+//
+//                return
+//            }
+//
+//            _ = run(cmd: clang, args: [objPath, "-o", "\(exePath)"])
+//        } catch let ex as OrbitError {
+//            print(ex.message)
+//        } catch let ex {
+//            throw ex
+//        }
+//    }
+//}
 
 // JIT is not working correctly, something to do with libffi by the looks of it.
 // If we can't get this working, I'll probably write a custom interpreter or VM at some point to remove this dependency,
@@ -316,9 +217,8 @@ class Build : Command {
 //    }
 //}
 
-CLI.setup(name: "orbit")
-CLI.register(commands: [Lex(), Parse(), TypeCheck(), LLVM(), Build()])
+let cli = CLI(name: "orbit", commands: [Lex(), Parse()]) //, TypeCheck(), LLVM(), Build()])
 
-//_ = CLI.debugGo(with: "orbit build /Users/davie/dev/other/test.orb")
-_ = CLI.go()
+//_ = cli.debugGo(with: "orbit parse /Users/davie/dev/other/Orb/simple.orb")
+_ = cli.go()
 

@@ -1,0 +1,79 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "FileCheck",
+        "repositoryURL": "https://github.com/llvm-swift/FileCheck.git",
+        "state": {
+          "branch": null,
+          "revision": "1c966580c83cf2e41be802992d46fe2edfc5c95f",
+          "version": "0.0.5"
+        }
+      },
+      {
+        "package": "LLVM",
+        "repositoryURL": "https://github.com/trill-lang/LLVMSwift",
+        "state": {
+          "branch": null,
+          "revision": "adc94d2a3e24913c88980ba00e81502f47f7bd33",
+          "version": "0.2.2"
+        }
+      },
+      {
+        "package": "OrbitBackend",
+        "repositoryURL": "https://github.com/daviejaneway/OrbitBackend.git",
+        "state": {
+          "branch": null,
+          "revision": "ae09ba81071ff9c1122630e63ace1b6bd7268249",
+          "version": "0.0.24"
+        }
+      },
+      {
+        "package": "OrbitCompilerUtils",
+        "repositoryURL": "https://github.com/daviejaneway/OrbitCompilerUtils.git",
+        "state": {
+          "branch": null,
+          "revision": "72431a7afd1f88d2f35fc428ad0e2fc9358418aa",
+          "version": "0.0.3"
+        }
+      },
+      {
+        "package": "OrbitFrontend",
+        "repositoryURL": "https://github.com/daviejaneway/OrbitFrontend.git",
+        "state": {
+          "branch": null,
+          "revision": "ac587808495fa674a2dd5f1a72bcf78933733536",
+          "version": "0.0.63"
+        }
+      },
+      {
+        "package": "SwiftCLI",
+        "repositoryURL": "https://github.com/jakeheis/SwiftCLI.git",
+        "state": {
+          "branch": null,
+          "revision": "8e5916bfcc7f8acee6fb2cb36d1ffefb02ac2460",
+          "version": "3.1.0"
+        }
+      },
+      {
+        "package": "SwiftyJSON",
+        "repositoryURL": "https://github.com/SwiftyJSON/SwiftyJSON.git",
+        "state": {
+          "branch": null,
+          "revision": "de309166a48a9dfc51d5bc4c55c0664d981de311",
+          "version": "4.0.0"
+        }
+      },
+      {
+        "package": "cllvm",
+        "repositoryURL": "https://github.com/llvm-swift/cllvm.git",
+        "state": {
+          "branch": null,
+          "revision": "e85a8ebe9f45cff9fa31b43c32662318232b392a",
+          "version": "0.0.3"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
